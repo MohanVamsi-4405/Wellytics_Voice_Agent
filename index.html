@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wellytics Voice Agent · Dev</title>
+    <meta name="description" content="Wellytics AI voice receptionist — patient lookup, symptom triage and appointment booking by voice.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f6f9fb;
+            --surface: #ffffff;
+            --surface-2: #eef4f7;
+            --text: #0f2733;
+            --muted: #5a7180;
+            --border: #dbe6ec;
+            --brand: #0e9f8e;
+            --brand-2: #1f6fd1;
+            --brand-soft: #e2f5f2;
+            --warn: #b45309;
+            --warn-soft: #fef3c7;
+            --shadow: 0 1px 2px rgba(15, 39, 51, .04), 0 8px 24px rgba(15, 39, 51, .06);
+            --radius: 18px;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0b1820;
+                --surface: #11222c;
+                --surface-2: #162b37;
+                --text: #e6f0f4;
+                --muted: #93a9b5;
+                --border: #21394696;
+                --brand: #2cc7b3;
+                --brand-2: #5a9cf0;
+                --brand-soft: #123a37;
+                --warn: #fbbf24;
+                --warn-soft: #3a2c0b;
+                --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .25);
+            }
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+        .wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+
+        /* ---------- Header ---------- */
+        header {
+            position: sticky; top: 0; z-index: 10;
+            background: color-mix(in srgb, var(--bg) 85%, transparent);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+        }
+        .nav { display: flex; align-items: center; justify-content: space-between; height: 68px; }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -.02em; text-decoration: none; color: var(--text); }
+        .logo-mark {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--brand), var(--brand-2));
+            display: grid; place-items: center; color: #fff;
+        }
+        .env-badge {
+            font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+            padding: 6px 12px; border-radius: 999px;
+            background: var(--warn-soft); color: var(--warn);
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .env-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+        /* ---------- Hero ---------- */
+        .hero { padding: 72px 0 56px; display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: center; }
+        .eyebrow {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 600; color: var(--brand);
+            background: var(--brand-soft); padding: 6px 14px; border-radius: 999px; margin-bottom: 20px;
+        }
+        h1 { font-size: clamp(34px, 5vw, 54px); line-height: 1.08; letter-spacing: -.035em; font-weight: 800; margin-bottom: 20px; }
+        h1 .grad { background: linear-gradient(90deg, var(--brand), var(--brand-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .lede { font-size: 18px; color: var(--muted); max-width: 540px; margin-bottom: 32px; }
+        .actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 10px;
+            font: inherit; font-weight: 700; font-size: 16px;
+            padding: 14px 24px; border-radius: 12px; border: 0; cursor: pointer; text-decoration: none;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--brand), var(--brand-2)); color: #fff; box-shadow: 0 8px 20px color-mix(in srgb, var(--brand) 35%, transparent); }
+        .btn-primary:hover { transform: translateY(-1px); }
+        .btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--surface-2); }
+        .mic-notice {
+            margin-top: 16px; max-width: 540px; font-size: 14px; color: var(--text);
+            background: var(--brand-soft); border-radius: 12px; padding: 12px 16px;
+        }
+        .langs { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px; color: var(--muted); align-items: center; }
+        .chip { padding: 4px 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font-weight: 500; }
+
+        /* Agent card */
+        .agent-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+            box-shadow: var(--shadow); padding: 32px; text-align: center; position: relative; overflow: hidden;
+        }
+        .agent-card::before {
+            content: ""; position: absolute; inset: 0 0 auto 0; height: 120px;
+            background: linear-gradient(135deg, var(--brand-soft), color-mix(in srgb, var(--brand-2) 14%, transparent));
+        }
+        .orb {
+            position: relative; width: 132px; height: 132px; margin: 24px auto 20px; border-radius: 50%;
+            background: radial-gradient(circle at 35% 30%, #7ff0e0, var(--brand) 55%, var(--brand-2));
+            display: grid; place-items: center; color: #fff;
+            box-shadow: 0 12px 32px color-mix(in srgb, var(--brand) 40%, transparent);
+        }
+        .orb::before, .orb::after {
+            content: ""; position: absolute; inset: -12px; border-radius: 50%;
+            border: 2px solid color-mix(in srgb, var(--brand) 40%, transparent);
+            animation: pulse 2.6s ease-out infinite;
+        }
+        .orb::after { animation-delay: 1.3s; }
+        @keyframes pulse { from { transform: scale(.9); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) { .orb::before, .orb::after { animation: none; } }
+        .agent-name { position: relative; font-size: 22px; font-weight: 800; letter-spacing: -.02em; }
+        .agent-role { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+        .status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--brand); }
+        .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+        .bars { display: flex; justify-content: center; gap: 4px; height: 28px; align-items: center; margin: 18px 0 8px; }
+        .bars span { width: 4px; border-radius: 4px; background: var(--brand); opacity: .7; animation: eq 1.2s ease-in-out infinite; }
+        .bars span:nth-child(odd) { background: var(--brand-2); }
+        @keyframes eq { 0%, 100% { height: 6px; } 50% { height: 26px; } }
+        @media (prefers-reduced-motion: reduce) { .bars span { animation: none; height: 14px; } }
+
+        /* ---------- Sections ---------- */
+        section { padding: 56px 0; }
+        .section-head { max-width: 620px; margin-bottom: 36px; }
+        .section-head h2 { font-size: 30px; letter-spacing: -.025em; line-height: 1.2; margin-bottom: 10px; }
+        .section-head p { color: var(--muted); }
+
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+        .card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 24px; box-shadow: var(--shadow);
+        }
+        .icon {
+            width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center;
+            background: var(--brand-soft); color: var(--brand); margin-bottom: 16px;
+        }
+        .card h3 { font-size: 17px; margin-bottom: 6px; letter-spacing: -.01em; }
+        .card p { font-size: 14.5px; color: var(--muted); }
+
+        .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; counter-reset: step; }
+        .step { position: relative; padding: 24px; border-radius: var(--radius); background: var(--surface-2); }
+        .step::before {
+            counter-increment: step; content: counter(step, decimal-leading-zero);
+            display: block; font-size: 13px; font-weight: 800; color: var(--brand); letter-spacing: .08em; margin-bottom: 10px;
+        }
+        .step h3 { font-size: 16px; margin-bottom: 6px; }
+        .step p { font-size: 14px; color: var(--muted); }
+
+        .tips {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 32px; box-shadow: var(--shadow);
+        }
+        .tips h2 { font-size: 24px; letter-spacing: -.02em; margin-bottom: 8px; }
+        .tips p.sub { color: var(--muted); font-size: 15px; }
+        .tips ul { list-style: none; display: grid; gap: 12px; }
+        .tips li { display: flex; gap: 12px; font-size: 15px; }
+        .tips li svg { flex: none; margin-top: 3px; color: var(--brand); }
+
+        footer { border-top: 1px solid var(--border); padding: 28px 0 110px; color: var(--muted); font-size: 13px; }
+        footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+
+        /* Highlight pulse when the CTA can't open the widget directly */
+        elevenlabs-convai.nudge { animation: nudge .6s ease 3; }
+        @keyframes nudge { 50% { transform: scale(1.06); } }
+
+        /* ---------- Responsive ---------- */
+        @media (max-width: 960px) {
+            .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 48px; }
+            .grid, .steps { grid-template-columns: repeat(2, 1fr); }
+            .tips { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 560px) {
+            .wrap { padding: 0 16px; }
+            .grid, .steps { grid-template-columns: 1fr; }
+            .lede { font-size: 16px; }
+            .btn { width: 100%; justify-content: center; }
+            .env-badge { font-size: 11px; padding: 5px 10px; }
+            .tips, .agent-card { padding: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="wrap nav">
+        <a class="logo" href="#">
+            <span class="logo-mark" aria-hidden="true">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>
+            </span>
+            Wellytics
+        </a>
+        <span class="env-badge" title="Development environment">Dev environment</span>
+    </div>
+</header>
+
+<main>
+    <div class="wrap hero">
+        <div>
+            <span class="eyebrow">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+                AI Voice Receptionist
+            </span>
+            <h1>Book a doctor's visit <span class="grad">just by talking.</span></h1>
+            <p class="lede">
+                Meet Dr. Riddhi, the Wellytics voice agent. She finds your patient record,
+                understands your symptoms, recommends the right department and books your
+                appointment — in a natural conversation.
+            </p>
+            <div class="actions">
+                <button class="btn btn-primary" id="startCall" type="button">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92Z"/></svg>
+                    Start a conversation
+                </button>
+                <a class="btn btn-ghost" href="#how">How it works</a>
+            </div>
+            <p class="mic-notice" id="micNotice" hidden>
+                Tap <strong>Start a conversation</strong> to talk to Dr. Riddhi — it opens our secure voice page so your microphone can be used.
+            </p>
+            <div class="langs">
+                <span>Speaks</span>
+                <span class="chip">English</span>
+                <span class="chip">हिन्दी</span>
+                <span class="chip">తెలుగు</span>
+            </div>
+        </div>
+
+        <aside class="agent-card" aria-label="Voice agent">
+            <div class="orb" aria-hidden="true">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><path d="M12 19v3"/></svg>
+            </div>
+            <div class="agent-name">Dr. Riddhi Sharma</div>
+            <div class="agent-role">Receptionist &amp; Triage Nurse · Hyderabad</div>
+            <div class="bars" aria-hidden="true">
+                <span style="animation-delay:-.1s"></span><span style="animation-delay:-.5s"></span><span style="animation-delay:-.3s"></span><span style="animation-delay:-.8s"></span><span style="animation-delay:-.2s"></span><span style="animation-delay:-.6s"></span><span style="animation-delay:-.4s"></span><span style="animation-delay:-.9s"></span><span style="animation-delay:-.15s"></span>
+            </div>
+            <span class="status">Available now</span>
+        </aside>
+    </div>
+
+    <section>
+        <div class="wrap">
+            <div class="section-head">
+                <h2>What the agent can do</h2>
+                <p>Connected to the Wellytics scheduling system, patient database and clinical triage engine.</p>
+            </div>
+            <div class="grid">
+                <article class="card">
+                    <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></div>
+                    <h3>Patient lookup</h3>
+                    <p>Finds returning patients by phone number or name and verifies with date of birth.</p>
+                </article>
+                <article class="card">
+                    <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+                    <h3>Symptom triage</h3>
+                    <p>Asks focused follow-up questions and recommends the right department using your history.</p>
+                </article>
+                <article class="card">
+                    <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="m9 16 2 2 4-4"/></svg></div>
+                    <h3>Appointment booking</h3>
+                    <p>Checks open slots, confirms date and AM/PM time with you, then books instantly.</p>
+                </article>
+                <article class="card">
+                    <div class="icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></div>
+                    <h3>Multilingual</h3>
+                    <p>Switches naturally between English, Hindi and Telugu to suit each patient.</p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section id="how">
+        <div class="wrap">
+            <div class="section-head">
+                <h2>How a call works</h2>
+                <p>A typical conversation takes just a few minutes from hello to confirmed booking.</p>
+            </div>
+            <div class="steps">
+                <div class="step"><h3>Identify</h3><p>Choose your language and share your registered mobile number.</p></div>
+                <div class="step"><h3>Select hospital</h3><p>Pick the hospital or branch you'd like to visit.</p></div>
+                <div class="step"><h3>Describe symptoms</h3><p>Answer a couple of quick questions so we route you to the right specialist.</p></div>
+                <div class="step"><h3>Confirm booking</h3><p>Agree on a date and time — your appointment is booked on the call.</p></div>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="wrap">
+            <div class="tips">
+                <div>
+                    <h2>Before you start</h2>
+                    <p class="sub">A few tips for the best experience.</p>
+                </div>
+                <ul>
+                    <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Allow microphone access when your browser asks.</li>
+                    <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Find a quiet spot and speak at a normal pace.</li>
+                    <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Keep your registered mobile number handy.</li>
+                    <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>In a medical emergency, call 108 instead.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="wrap">
+        <span>© <span id="year"></span> Wellytics Health. All rights reserved.</span>
+        <span>Voice agent · Development build</span>
+    </div>
+</footer>
+
+<elevenlabs-convai agent-id="agent_1601kabp8819fc5sw01y6cnbwmew"></elevenlabs-convai>
+<script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+<script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Browsers block the microphone when this file is opened locally (file://, content:// from WhatsApp).
+    // In that case, send voice calls to the agent's hosted HTTPS page on ElevenLabs instead.
+    var TALK_URL = 'https://elevenlabs.io/app/talk-to?agent_id=agent_1601kabp8819fc5sw01y6cnbwmew';
+    if (!window.isSecureContext) {
+        document.getElementById('micNotice').hidden = false;
+    }
+
+    // Try to open the ElevenLabs widget; if its shadow DOM is closed, draw attention to it instead.
+    document.getElementById('startCall').addEventListener('click', function () {
+        if (!window.isSecureContext) {
+            window.location.href = TALK_URL;
+            return;
+        }
+        var widget = document.querySelector('elevenlabs-convai');
+        if (!widget) return;
+        var btn = widget.shadowRoot && widget.shadowRoot.querySelector('button');
+        if (btn) {
+            btn.click();
+        } else {
+            widget.classList.remove('nudge');
+            void widget.offsetWidth;
+            widget.classList.add('nudge');
+        }
+    });
+</script>
+</body>
+</html>
